@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html layout:decorate="~{layouts/layout1}" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    xmlns:th="http://www.thymeleaf.org">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- 사용자 CSS 추가 -->
+<th:block layout:fragment="css">
+    <style>
+        a {
+            text-decoration: none;
+        }
+
+        #categori {
+            margin-top: 4rem;
+            margin-bottom: 4rem;
+        }
+
+        .carousel-inner>.item {
+            height: 350px;
+        }
+
+
+        .margin {
+            margin-bottom: 30px;
+        }
+
+        .banner {
+            height: 300px;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .card {
+            height: 450px;
+            display: flex;
+
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease; /* 애니메이션 추가 */
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1); /* 기본 그림자 */
+            border: none; /* 테두리 제거 */
+            border-radius: 8px; /* 모서리 둥글게 */
+        }
+
+        .card:hover {
+            transform: translateY(-10px); /* 호버 시 위로 살짝 이동 */
+            box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.3); /* 호버 시 그림자 */
+        }
+
+        .card img {
+            width: 100%;
+            height: 300px;
+            object-fit: contain;
+            transition: transform 0.3s ease; /* 이미지 확대 애니메이션 */
+        }
+
+        .card:hover img {
+            transform: scale(1.1); /* 호버 시 이미지 확대 */
+        }
+
+        .card-body {
+            padding: 10px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            background-color: #f9f9f9; /* 카드 내부 배경색 */
+            transition: background-color 0.3s ease; /* 배경색 애니메이션 */
+        }
+
+        .card:hover .card-body {
+            background-color: #e9ecef; /* 호버 시 배경색 변경 */
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: color 0.3s ease; /* 텍스트 색상 애니메이션 */
+        }
+
+        .card:hover .card-title {
+            color: #007bff; /* 호버 시 제목 색상 변경 */
+        }
+
+        .card-text {
+            font-size: 0.9rem;
+            color: #6c757d;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: color 0.3s ease;
+        }
+
+        .card:hover .card-text {
+            color: #495057; /* 호버 시 텍스트 색상 변경 */
+        }
+
+        .center {
+            text-align: center;
+        }
+
+        /* 챗봇 아이콘 스타일 */
+        .chatbot-icon {
+            position: fixed;
+            bottom: 90px;
+            right: 30px;
+            /* 아이콘을 오른쪽으로 이동 */
+            font-size: 40px;
+            /* 아이콘 크기 증가 */
+            cursor: pointer;
+            /* 커서 포인터 추가 */
+            background-color: #007bff;
+            /* 배경 색 추가 */
+            color: white;
+            /* 아이콘 색상 */
+            border-radius: 50%;
+            /* 원형 */
+            height: 60px;
+            aspect-ratio: 1 / 1;
+            padding: 10px;
+            /* 여백 추가 */
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            /* 그림자 추가 */
+            transition: background-color 0.3s;
+            /* 배경 색상 전환 효과 */
+            z-index: 1;
+        }
+
+        .chatbot-icon:hover {
+            background-color: #0056b3;
+            /* 호버 시 색상 변경 */
+        }
+
+        /* 챗봇 스타일 */
+        .chatbot-container {
+            display: none;
+            /* 기본적으로 숨김 */
+            position: fixed;
+            bottom: 30px;
+            /* 위치 조정 */
+            right: 30px;
+            width: 300px;
+            /* 너비 조정 */
+            height: 400px;
+            /* 높이 늘리기 */
+            background-color: #ffffff;
+            /* 배경색 */
+            border: 1px solid #ccc;
+            /* 테두리 */
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            /* 그림자 */
+            border-radius: 8px;
+            /* 모서리 둥글게 */
+            overflow: hidden;
+            /* 내용이 넘치지 않도록 숨김 */
+            z-index: 99;
+        }
+
+        .chatbot-header {
+            background-color: #007bff;
+            /* 챗봇 헤더 색상 */
+            color: white;
+            /* 글자 색상 */
+            padding: 10px;
+            /* 여백 */
+            text-align: center;
+            /* 가운데 정렬 */
+            border-radius: 8px 8px 0 0;
+            /* 모서리 둥글게 */
+        }
+
+        .chatbot-body {
+            padding: 10px;
+            /* 여백 */
+            font-size: 16px;
+            /* 글씨 크기 늘리기 */
+            line-height: 1.6;
+            /* 줄 간격 늘리기 */
+            height: calc(100% - 95px);
+            /* 입력창 크기를 고려한 높이 */
+            overflow-y: auto;
+            /* 수직 스크롤 가능 */
+        }
+
+        .chatbot-input {
+            display: flex;
+            /* 입력창 정렬 */
+            height: 50px;
+            padding: 5px;
+            /* 여백 */
+            border-top: 1px solid #ccc;
+            /* 입력창 위쪽에 테두리 추가 */
+            background-color: #f9f9f9;
+            /* 입력창 배경색 */
+        }
+
+        .chatbot-input input {
+            flex-grow: 1;
+            /* 입력창 확장 */
+            padding: 5px;
+            /* 여백 */
+            border: 1px solid #ccc;
+            /* 테두리 */
+            border-radius: 5px;
+            /* 모서리 둥글게 */
+            margin-right: 5px;
+            /* 버튼과의 간격 */
+        }
+
+        .chatbot-input button {
+            padding: 5px 10px;
+            /* 버튼 여백 */
+            border: none;
+            /* 테두리 제거 */
+            background-color: #007bff;
+            /* 버튼 배경색 */
+            color: white;
+            /* 버튼 글자색 */
+            border-radius: 5px;
+            /* 모서리 둥글게 */
+            cursor: pointer;
+            /* 커서 포인터 */
+        }
+
+        .chatbot-input button:hover {
+            background-color: #0056b3;
+            /* 버튼 호버 색상 */
+        }
+
+        .close-button {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: transparent;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .chatbot-buttons {
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .chatbot-message {
+            padding: 15px;
+            margin-bottom: 20px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            line-height: 1.8;
+            font-size: 16px;
+            color: #333;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .chatbot-message h3 {
+            margin: 0;
+            font-size: 20px;
+            color: #007bff;
+        }
+
+        .chatbot-info {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f1f1f1;
+            border-left: 4px solid #007bff;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #555;
+        }
+
+        .chatbot-message ul {
+            padding-left: 20px;
+        }
+
+        #sortOrder {
+            margin-bottom: 1rem;
+            border: none;
+            border-bottom: solid 0.1px rgb(218, 218, 218);
+            box-shadow: none;
+        }
+
+        .content-body {
+            padding: 1rem;
+        }
+
+        .itemManu {
+            z-index: 99;
+            position: fixed;
+            bottom: 28rem;
+            right: 3rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            background-color: white;
+            border-radius: 5%;
+            border: solid 0.1px rgb(208, 208, 208);
+        }
+
+        .categoriBtn:hover {
+            box-shadow: 0px 0px 10px 3px rgba(0, 0, 255, 0.253);
+            transition-duration: 0.3s;
+        }
+
+        .categoriBtn {
+            transition-duration: 0.3s;
+        }
+
+        .carousel {
+            z-index: 1;
+        }
+
+        .soldouttext {
+            text-decoration-line: line-through;
+        }
+
+        .chat-bot {
+            border: solid 0.1px rgb(211, 211, 211);
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            padding: 10px;
+            font-weight: bold;
+            margin: 5px 0;
+            line-height: 1.6;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+            text-align: left;
+        }
+
+        .kakaochat {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 98;
+        }
+
+        .carousel-body {
+            z-index: 99;
+            display: inline;
+            font-size: xxx-large;
+            position: absolute;
+            color: black;
+            margin-left: 14rem;
+            margin-top: 12rem;
+        }
+
+        .carousel-body h1 {
+            font-weight: bold;
+        }
+
+        pre {
+            font-size: x-large;
+            font-family: "Noto Sans KR", sans-serif;
+        }
+
+        .carousel-btn {
+            font-size: large;
+            border-radius: 5px;
+            border: none;
+            padding-left: 1rem;
+            padding-right: 1rem;
+            color: white;
+            background-color: rgb(210, 0, 115);
+        }
+
+        .categoriBtn {
+            position: relative;
+            display: block;
+            width: 100px;
+            height: 120px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            overflow: hidden;
+            text-align: center;
+            padding: 0;
+        }
+
+        .categoriBtn img {
+            width: 100%;
+            height: auto;
+            transition: transform 0.3s ease;
+        }
+
+        .categoriBtn .categori-title {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100%;
+            transform: translate(-50%, -50%) scale(0);
+            font-size: 14px;
+            font-weight: bold;
+            color: #333;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 5px 10px;
+            border-radius: 5px;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            opacity: 0;
+        }
+
+        .categoriBtn:hover img {
+            transform: scale(1.1);
+            filter: brightness(0.7);
+        }
+
+        .categoriBtn:hover .categori-title {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+        }
+
+        .item-row {
+            padding: 6rem;
+            margin-bottom: 3rem;
+        }
+
+
+        /* 모바일 스타일 */
+        @media (max-width: 426px) {
+            #sortOrder {
+                font-size: small;
+            }
+
+            .carousel {
+                display: none;
+            }
+
+            .categoriBtn {
+                font-size: 14px;
+                padding: 5px;
+            }
+
+            .chatbot-container {
+                width: 90%;
+                bottom: 10px;
+                right: 5%;
+            }
+
+            .carousel-inner>.item {
+                height: 200px;
+            }
+
+            #categori {
+                display: none;
+            }
+
+            .itemManu {
+                bottom: 10rem;
+                right: 2.4rem;
+            }
+
+            .content-body {
+                margin: none;
+            }
+
+            .item-row {
+                padding: 0rem;
+                margin-bottom: 1rem;
+
+            }
+
+            .col-md-3 {
+                flex: 0 0 50%; /* 한 줄에 2개 */
+                max-width: 50%; /* 한 줄에 2개 */
+            }
+
+            .card {
+                height: 330px; /* 모바일 카드 높이 조정 */
+                width: 100%;
+            }
+
+            .card img {
+                height: 200px;
+            }
+        }
+    </style>
+</th:block>
+
+<!-- 1030 성아 챗봇 스크립트 추가 -->
+<th:block layout:fragment="script">
+    <script th:inline="javascript">
+        function addCommas(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const priceElements = document.querySelectorAll('.price');
+            priceElements.forEach(element => {
+                const rawPrice = element.dataset.price; // data-price 속성에서 가격 가져오기
+                if (rawPrice) {
+                    const formattedPrice = addCommas(rawPrice); // 1,000 단위 콤마 추가
+                    element.textContent = `${formattedPrice}원`; // 텍스트 업데이트
+                }
+            });
+        });
+        $(document).ready(function () {
+            // 스크롤 이동 함수
+            function goToScroll(targetId) {
+                $('html, body').animate({
+                    scrollTop: $("#" + targetId).offset().top
+                }, 400);
+            }
+            // 맨위로 버튼 클릭 이벤트
+            $("#topBtn").click(function () {
+                goToScroll('topSection'); // 상세보기 섹션으로 이동
+            });
+            // 맨아래로 버튼 클릭 이벤트
+            $("#bottomBtn").click(function () {
+                goToScroll('bottomSection'); // 상세보기 섹션으로 이동
+            });
+        });
+        let memberName = /*[[${memberName}]]*/ "";
+
+        // 챗봇 토글 함수
+        function toggleChatbot() {
+            const chatbot = document.getElementById('chatbot');
+            const chatbotBody = document.getElementById('chatbotBody');
+
+            // 챗봇이 열리면 환영 메시지를 추가
+            if (chatbot.style.display === 'none' || chatbot.style.display === '') {
+                chatbot.style.display = 'block';
+                // 초기 메시지 추가
+                chatbotBody.innerHTML = `
+                    <div class="chatbot-message">
+                        <strong>안녕하세요, ${memberName} 님!</strong>
+                        <p>
+                            TOP를 찾아주셔서 감사합니다.<br><br>
+                            어떤 문의 사항이 있으신가요?<br>
+                            자주 묻는 질문은 아래에서 바로 확인하실 수 있으며, <strong>배송, 주문취소, 혜택, 회원정보</strong> 등의 키워드를 입력하시면 관련 정보를 안내해 드립니다.<br><br>
+                            더 자세한 문의는 '1:1 문의하기' 버튼을 클릭하여 남겨주시면 운영시간 내 순차적으로 빠른 답변 드리겠습니다. 더불어 '톡상담' 버튼을 클릭하시면 TOP 카카오톡 채널에서 실시간 상담이 가능합니다.
+                        </p>
+                        <div class="chatbot-info">
+                            <strong>고객센터 운영시간</strong><br>
+                            평일 10:00~17:00 (주말 및 공휴일 휴무)<br>
+                            점심시간 12:00~13:00<br>
+                            ※ 전화 상담은 운영하지 않습니다. TOP 카카오톡 채널로 문의 바랍니다.※
+                        </div>
+                    </div>
+                    <div class="chatbot-buttons">
+                        <button class="chat-bot" onclick="location.href='/notice/list'">자주 묻는 질문 확인하기</button>
+                        <button class="chat-bot" onclick="location.href='/qna/list'">1:1 문의하기</button>
+                    </div>
+                `;
+            } else {
+                chatbot.style.display = 'none';
+            }
+
+            // 스크롤을 항상 아래로
+            chatbotBody.scrollTop = chatbotBody.scrollHeight;
+        }
+
+        // 메시지 전송 함수
+        function sendMessage() {
+            const userMessage = document.getElementById('userMessage').value.trim();
+            const chatbotBody = document.getElementById('chatbotBody');
+            let response = "";
+
+            if (!userMessage) {
+                // 사용자가 입력하지 않았을 때
+                return; // 아무 것도 하지 않음
+            } else if (userMessage.includes("배송") || userMessage.includes("발송")) {
+                response = "TOP는 평일 오전 10시 이전 결제 완료 건에 한해 당일 발송을 진행하고 있습니다. (주말 및 공휴일 제외)<br><br>" +
+                    "단, 주문량이 많을 경우 발송이 지연될 수 있으며, 택배사 사정에 따라 출고 이후 배송이 늦어질 수 있는 점 양해 부탁드립니다.<br><br>" +
+                    "자세한 배송 및 취소 관련 정보를 확인하시려면 <a href='/notice/list'>여기</a>를 클릭해 주세요.";
+            } else if (userMessage.includes("취소") || userMessage.includes("주문취소")) {
+                response = "주문취소는 전체 취소만 가능하며, 부분 취소는 불가합니다.<br>" +
+                    "구매이력 및 취소 현황을 확인하시려면 <a href='/orders'>여기</a>를 클릭해 주세요.";
+            } else if (userMessage.includes("혜택") || userMessage.includes("등급")) {
+                response = "• 평생 무료 배송<br>" +
+                    "• 회원 등급 별 할인 혜택<br>" +
+                    "- 브론즈 등급 1%<br>" +
+                    "- 실버 등급 3%<br>" +
+                    "- 골드 등급 5%<br>" +
+                    "- 플래티넘 등급 10%";
+            } else if (userMessage.includes("회원정보") || userMessage.includes("정보수정")) {
+                response = "회원정보 수정은 <a href='/members/update'>여기</a>에서 가능합니다.";
+            } else {
+                response = "죄송합니다. 해당 요청에 대한 정보를 찾을 수 없습니다. '배송', '취소', '등급'과 같은 키워드를 입력해 주세요.";
+            }
+
+            chatbotBody.innerHTML += "<br><div><strong> " + userMessage + "</strong></div><br>";
+            chatbotBody.innerHTML += "<div>" + response + "</div><br>";
+            document.getElementById('userMessage').value = ""; // 입력창 비우기
+            chatbotBody.scrollTop = chatbotBody.scrollHeight; // 스크롤 아래로 이동
+        }
+
+        // 챗봇 닫기 함수
+        function closeChatbot() {
+            const chatbot = document.getElementById('chatbot');
+            chatbot.style.display = 'none'; // 챗봇 숨기기
+        }
+
+        // 1107 성아 추가 // 상품 정렬 함수
+        function changeSortOrder() {
+            // 드롭다운에서 선택한 정렬 옵션을 가져오기
+            const sortOrder = document.getElementById("sortOrder").value;
+            const url = new URL(window.location.href);
+
+            // 기존의 sortCondition 파라미터를 제거하고, 새로운 값을 추가
+            url.searchParams.set("sortCondition", sortOrder);
+
+            // 현재 스크롤 위치 저장 (세션 스토리지 사용)
+            sessionStorage.setItem('scrollPosition', window.scrollY);
+
+            // 현재 검색 쿼리와 기타 파라미터도 유지하면서 페이지 새로고침
+            window.location.href = url.toString();
+        }
+        window.onload = function () {
+            // 저장된 스크롤 위치가 있다면
+            const savedScrollPosition = sessionStorage.getItem('scrollPosition');
+
+            if (savedScrollPosition !== null) {
+                // 해당 위치로 스크롤 이동
+                window.scrollTo(0, savedScrollPosition);
+
+                // 스크롤 위치 저장을 제거 (페이지 새로고침 시만 적용되도록)
+                sessionStorage.removeItem('scrollPosition');
+            }
+        };
+
+        // 1107 성아 추가 // 무한 스크롤
+        let currentPage = 0;
+        let isLoading = false;
+        let isLastPage = false;  // 더 이상 데이터가 없는지 확인하는 플래그
+
+        window.addEventListener("scroll", () => {
+            const scrollPosition = window.scrollY + window.innerHeight;
+            const pageHeight = document.documentElement.scrollHeight;
+
+            // 페이지가 거의 끝에 도달했을 때 새로운 데이터를 불러옵니다.
+            if (scrollPosition >= pageHeight - 100) {
+                if (!isLoading && !isLastPage) {
+                    loadMoreItems();
+                }
+            }
+        });
+
+        function loadMoreItems() {
+            isLoading = true;
+            document.getElementById("loadMore").style.display = "block";  // 로딩 메시지 표시
+
+            // 새로운 데이터를 서버에서 받아오는 AJAX 요청
+            fetch(`/load-main-items?page=${currentPage + 1}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log("서버 응답 데이터:", data);  // 서버에서 받은 전체 데이터 구조 출력
+
+                    // data가 배열일 경우에만 실행
+                    if (Array.isArray(data)) {
+                        const container = document.getElementById("content-container");
+
+                        // 데이터가 없으면 더 이상 불러올 데이터가 없다는 표시
+                        if (data.length === 0) {
+                            isLastPage = true;  // 더 이상 데이터가 없으면 isLastPage를 true로 설정
+                            document.getElementById("loadMore").style.display = "none";  // 로딩 메시지 숨기기
+                            document.getElementById("noMoreDataMessage").style.display = "block";  // "마지막 페이지입니다." 메시지 표시
+                            return;
+                        }
+
+                        // 데이터를 화면에 추가
+                        data.forEach(item => {
+                            const itemElement = document.createElement("div");
+                            itemElement.classList.add("col-md-3", "margin", "content-body");
+                            itemElement.innerHTML = `
+                                <div class="card">
+                                    <a class="text-dark" href="/item/${item.no}">
+                                        <img class="card-img-top" alt="${item.itemNm}" src="${item.imgUrl}">
+                                        <div class="card-body">
+                                            <h4 class="card-title Best3-item-title">${item.itemNm}</h4>
+                                            <p class="card-text">${item.itemDetail}</p>
+                                            <h3 class="card-title text-danger">
+                                                ${item.itemSellStatus === 'SOLD_OUT' ? '품절' : `${item.price}원`} <!-- 1108 성아 수정 -->
+                                            </h3>
+                                        </div>
+                                    </a>
+                                </div>
+                            `;
+                            container.appendChild(itemElement);
+                        });
+
+                        currentPage++;  // 페이지 번호 증가
+                    } else {
+                        console.warn("서버에서 배열 형태의 데이터가 전달되지 않았습니다.");
+                    }
+
+                    document.getElementById("loadMore").style.display = "none";  // 로딩 메시지 숨기기
+                    isLoading = false;
+                })
+                .catch(error => {
+                    console.error("데이터 로드 오류:", error);
+                    document.getElementById("loadMore").style.display = "none";  // 로딩 메시지 숨기기
+                    isLoading = false;
+                });
+        }
+
+
+    </script>
+</th:block>
+
+
+<div layout:fragment="content">
+    <div class="itemManu">
+        <button id="topBtn" class="btn">▲</button>
+        <button id="bottomBtn" class="btn">▼</button>
+    </div>
+    <input name="searchQuery" th:value="${itemSearchDto.searchQuery}" type="hidden">
+    <div class="center" th:if="${not #strings.isEmpty(itemSearchDto.searchQuery)}">
+        <p class="h3 font-weight-bold" th:text="${itemSearchDto.searchQuery} + '검색 결과'"></p>
+    </div>
+
+    <div class="carousel slide margin" data-ride="carousel" id="carouselControls">
+        <div class="container-fluid" id="topSection">
+            <div class="carousel slide" data-bs-ride="carousel" id="demo">
+                <!-- 클릭 버튼 -->
+                <div class="carousel-indicators">
+                    <button class="active" data-bs-slide-to="0" data-bs-target="#demo" type="button"></button>
+                    <button data-bs-slide-to="1" data-bs-target="#demo" type="button"></button>
+                    <button data-bs-slide-to="2" data-bs-target="#demo" type="button"></button>
+                </div>
+                <!-- 캐러셀 이미지 -->
+                <div class="carousel-inner">
+                    <div class="carousel-item active">
+                        <div class="carousel-body">
+                            <h1>TOP 냉장고 - 신선함의 시작</h1>
+                            <pre class="carousel-content">최고의 기술로 당신의 주방에 
+신선함을 더하세요.</pre>
+                            <button class="carousel-btn" type="button"
+                                onclick="location.href='/category/refrigerator'">자세히 보기</button>
+                        </div>
+                        <img alt="img1" src="/img/img1.png">
+                    </div>
+                    <div class="carousel-item">
+                        <div class="carousel-body">
+                            <h1>TOP PC - 성능의 정점</h1>
+                            <pre class="carousel-content">강력한 성능과 세련된 디자인으로 당신의 작업과 
+게임을 완벽하게 지원합니다.</pre>
+                            <button class="carousel-btn" type="button" onclick="location.href='/category/computer'">자세히
+                                보기</button>
+                        </div>
+                        <img alt="img2" src="/img/img2.jpg">
+                    </div>
+                    <div class="carousel-item">
+                        <div class="carousel-body">
+                            <h1>TOP TV - 생생한 경험의 시작</h1>
+                            <pre class="carousel-content">초고화질 화면과 풍부한 사운드로 
+집에서도 영화관 같은 몰입감을 느껴보세요.</pre>
+                            <button class="carousel-btn" type="button"
+                                onclick="location.href='/category/television'">자세히 보기</button>
+                        </div>
+                        <img alt="img3" src="/img/img3.png">
+                    </div>
+                </div>
+                <!-- 좌우 버튼 -->
+                <button class="carousel-control-prev" data-bs-slide="prev" data-bs-target="#demo" type="button">
+                    <span class="carousel-control-prev-icon"></span>
+                </button>
+                <button class="carousel-control-next" data-bs-slide="next" data-bs-target="#demo" type="button">
+                    <span class="carousel-control-next-icon"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!--------------- 카테고리 --------------->
+    <div class="container" id="categori">
+        <div class="row">
+            <div class="col-md-1">
+                <button class="categoriBtn" onclick="location.href='/category/television'">
+                    <img src="/img/categori/categoriTV.avif">
+                    <div class="categori-title">TV</div>
+                </button>
+            </div>
+            <div class="col-md-1">
+                <button class="categoriBtn" onclick="location.href='/category/mobilePhone'">
+                    <img src="/img/categori/categoriHandphone.avif">
+                    <div class="categori-title">Mobile</div>
+                </button>
+            </div>
+            <div class="col-md-1">
+                <button class="categoriBtn" onclick="location.href='/category/computer'">
+                    <img src="/img/categori/categoriMoniter.avif">
+                    <div class="categori-title">컴퓨터</div>
+                </button>
+            </div>
+            <div class="col-md-1">
+                <button class="categoriBtn" onclick="location.href='/category/washingMachine'">
+                    <img src="/img/categori/categoriSeatack.avif">
+                    <div class="categori-title">세탁기</div>
+                </button>
+            </div>
+            <div class="col-md-1">
+                <button class="categoriBtn" onclick="location.href='/category/refrigerator'">
+                    <img src="/img/categori/categoriNeang.avif">
+                    <div class="categori-title">냉장고</div>
+                </button>
+            </div>
+            <div class="col-md-1">
+                <button class="categoriBtn" onclick="location.href='/category/vacuum'">
+                    <img src="/img/categori/categoriClean.avif">
+                    <div class="categori-title">청소기</div>
+                </button>
+            </div>
+            <div class="col-md-1">
+                <button class="categoriBtn" onclick="location.href='/category/circulation'">
+                    <img src="/img/categori/categoriAircon.png">
+                    <div class="categori-title">에어컨</div>
+                </button>
+            </div>
+            <div class="col-md-1">
+                <button class="categoriBtn" onclick="location.href='/category/dishwasher'">
+                    <img src="/img/categori/categoriDisgwasher.jpeg">
+                    <div class="categori-title">식기세척기</div>
+                </button>
+            </div>
+            <div class="col-md-1">
+                <button class="categoriBtn" onclick="location.href='/category/clothesDryer'">
+                    <img src="/img/categori/categoriClothes.avif">
+                    <div class="categori-title">건조기</div>
+                </button>
+            </div>
+            <div class="col-md-1">
+                <button class="categoriBtn" onclick="location.href='/category/induction'">
+                    <img src="/img/categori/categoriInduction.jpeg">
+                    <div class="categori-title">인덕션</div>
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="container">
+        <img src="/img/temple.png" style="width:100%">
+    </div>
+
+
+    <!----------------- 카테코리.end ------------------->
+    <!-- 카카오 1:1 상담 ----------------------------------------------------------------->
+    <img class="kakaochat" src="/img/kakaochat.png" onclick="window.open('http://pf.kakao.com/_EDUVn/chat')"
+        style="cursor: pointer;">
+
+    <!-- 1107 성아 추가 정렬 드롭다운 메뉴 -->
+
+    <div class="container">
+        <div class="row item-row">
+            <select id="sortOrder" class="form-select" onchange="changeSortOrder()"
+                style="width: 150px; font-size: large; font-weight: bold;">
+                <option value="newest" th:selected="${itemSearchDto.sortCondition == 'newest'}">최신순</option>
+                <option value="oldest" th:selected="${itemSearchDto.sortCondition == 'oldest'}">오래된순</option>
+                <option value="priceDesc" th:selected="${itemSearchDto.sortCondition == 'priceDesc'}">가격 높은순</option>
+                <option value="priceAsc" th:selected="${itemSearchDto.sortCondition == 'priceAsc'}">가격 낮은순</option>
+            </select>
+
+
+            <!-- 1107 성아 수정 - 데이터를 표시할 컨테이너 -->
+            <div id="content-container" class="row">
+                <th:block th:each="item, status: ${items.getContent()}">
+                    <div class="col-md-3 margin content-body">
+                        <div class="card">
+                            <!-- 1101 성아 수정 -->
+                            <!--                    <a class="text-dark" th:href="'/item/' +${item.id}">-->
+                            <a class="text-dark" th:href="'/item/' +${item.no}">
+                                <img class="card-img-top" th:alt="${item.itemNm}" th:src="${item.imgUrl}">
+                                <div class="card-body">
+                                    <h4 class="card-title Best3-item-title">[[${item.itemNm}]]</h4>
+                                    <p class="card-text">[[${item.itemDetail}]]</p>
+                                    <h3 class="card-title text-danger soldouttext"
+                                        th:if="${item.itemSellStatus == 'SOLD_OUT'}">품절</h3>
+                                    <!-- 1108 성아 수정 -->
+                                    <!-- 품절일 때 -->
+                                    <h3 class="card-title text-danger soldouttext"
+                                        th:if="${item.itemSellStatus == T(com.top.constant.ItemSellStatus).SOLD_OUT}">품절
+                                    </h3>
+
+                                    <!-- 품절이 아닐 때 가격 표시 -->
+                                    <h3 class="card-title"
+                                        th:unless="${item.itemSellStatus == T(com.top.constant.ItemSellStatus).SOLD_OUT}">
+                                        <span class="price" th:attr="data-price=${item.price}"></span>
+                                    </h3>
+
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </th:block>
+            </div>
+            <!-- 1107 성아 추가 - 무한 스크롤을 위한 로더 & 마지막 페이지 표시 -->
+            <div id="loadMore" class="text-center" style="display:none;">
+                <p>로딩 중...</p>
+            </div>
+            <div id="noMoreDataMessage"
+                style="display: none; text-align: center; padding: 20px; font-size: 18px; color: #999;">
+                마지막 페이지입니다.
+            </div>
+        </div>
+    </div>
+    <div class="btn chatbot-icon" onclick="toggleChatbot()" data-bs-toggle="tooltip" title="Bot chat!"><i
+            class="fi fi-rr-user-robot" style="color: white;"></i></div>
+    <!-- 1030 성아 챗봇 추가 ------------------------------------------------------>
+    <!-- 챗봇 아이콘 -->
+    <!-- 챗봇 컨테이너 -->
+    <div class="chatbot-container" id="chatbot">
+        <button class="close-button" onclick="closeChatbot()">✖</button> <!-- X 버튼 추가 -->
+        <div class="chatbot-header">챗봇</div>
+        <div class="chatbot-body" id="chatbotBody"></div>
+        <div class="chatbot-input">
+            <input id="userMessage" placeholder="메시지를 입력하세요..." type="text" />
+            <button onclick="sendMessage()">전송</button>
+        </div>
+    </div>
+    <!-- 챗봇 끝 -->
+
+
+
+</div>
+<script>
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
+</script>
+
+</html>

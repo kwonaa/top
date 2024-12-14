@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html layout:decorate="~{layouts/adminLayout}" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  xmlns:th="http://www.thymeleaf.org">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- 사용자 CSS 추가 -->
+<th:block layout:fragment="css">
+  <style>
+    a {
+      text-decoration: none;
+    }
+
+    .admin-member {
+      margin-top: 4rem;
+      width: 90%;
+      overflow-x: auto;
+      /* 테이블의 너비가 화면을 넘으면 스크롤 생성을 허용 */
+    }
+
+    .admin-member-h1 {
+      margin-bottom: 4rem;
+    }
+
+    .btn-primary {
+      float: right;
+    }
+
+    table {
+      table-layout: auto;
+      /* 열 크기를 자동으로 조정 */
+      width: 100%;
+      border-collapse: collapse;
+      /* 셀 간의 여백 제거 */
+    }
+
+    table th,
+    table td {
+      text-align: center;
+      vertical-align: middle;
+      word-wrap: break-word;
+      /* 긴 단어 줄바꿈 */
+    }
+
+    @media (max-width: 426px) {
+      .admin-member {
+        width: 100%;
+        margin-top: 2rem;
+        padding: 0 1rem;
+      }
+
+      .admin-member-h1 {
+        font-size: 1.2rem;
+        margin-bottom: 2rem;
+      }
+
+      table {
+        font-size: 0.8rem;
+      }
+
+      table th,
+      table td {
+        padding: 0.5rem;
+        white-space: nowrap;
+        /* 한 줄로 표시 */
+      }
+
+      select {
+        font-size: 0.8rem;
+        padding: 0.3rem;
+      }
+
+      .btn-primary {
+        width: 100%;
+        float: none;
+        margin-top: 1rem;
+      }
+    }
+  </style>
+</th:block>
+
+<head>
+  <meta charset="UTF-8">
+  <title>TOP</title>
+</head>
+
+<body>
+  <div layout:fragment="content">
+    <div class="admin-member">
+      <h3 class="admin-member-h1">전체 회원 정보 조회 및 수정</h3>
+      <!-- 성공 메시지 표시 -->
+      <div th:if="${successMessage}" class="alert alert-success" role="alert">
+        <span th:text="${successMessage}"></span>
+      </div>
+
+      <!-- 오류 메시지 표시 -->
+      <div th:if="${errorMessage}" class="alert alert-danger" role="alert">
+        <span th:text="${errorMessage}"></span>
+      </div>
+      <form th:action="@{/admin/updateMembers}" method="post" onsubmit="return confirm('저장하시겠습니까?');">
+        <table class="table table-hover">
+          <thead class="table-active">
+            <tr>
+              <th>회원번호</th>
+              <th>이메일</th>
+              <th>회원가입 날짜</th>
+              <th>회원정보 수정 날짜</th>
+              <th>이름</th>
+              <th>권한</th>
+              <th>닉네임</th>
+              <th>전화번호</th>
+              <th>회원 등급변경</th>
+              <th>누적 구매 금액</th>
+
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="member : ${members}">
+              <td th:text="${member.id}"></td>
+              <td th:text="${member.email}"></td>
+              <td th:text="${#temporals.format(member.regTime, 'yyyy-MM-dd')}"></td>
+              <td th:text="${#temporals.format(member.updateTime, 'yyyy-MM-dd')}"></td>
+              <td th:text="${member.name}"></td>
+              <td th:text="${member.role}"></td>
+              <td th:text="${member.nickname}"></td>
+              <td th:text="${member.phone}"></td>
+
+
+              <td>
+                <select th:name="'grade_' + ${member.id}">
+                  <option value="BRONZE" th:selected="${member.grade.name()  == 'BRONZE'}">브론즈</option>
+                  <option value="SILVER" th:selected="${member.grade.name()  == 'SILVER'}">실버</option>
+                  <option value="GOLD" th:selected="${member.grade.name()  == 'GOLD'}">골드</option>
+                  <option value="PLATINUM" th:selected="${member.grade.name()  == 'PLATINUM'}">플래티넘</option>
+                </select>
+              </td>
+              <td th:text="${member.totalSpentAmount} + '원'"></td>
+
+            </tr>
+          </tbody>
+        </table>
+        <button type="submit" class="btn btn-primary">저장</button>
+      </form>
+    </div>
+  </div>
+</body>
+
+</html>

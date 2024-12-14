@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layouts/layout1}">
+
+<th:block layout:fragment="css">
+    <style>
+        .Notice-register-label {
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin: 1rem 0;
+            display: block;
+        }
+
+        .Notice-register-h1 {
+            margin-bottom: 2rem;
+            text-align: center;
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+
+        .Notice-register-text {
+            width: 100%;
+            padding: 0.6rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        .Notice-container {
+            width: 60%;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            margin: auto;
+            margin-top: 2rem;
+        }
+
+        .btn-primary {
+            background-color: rgb(52, 152, 219);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin-top: 1rem;
+            border-radius: 5px;
+            font-size: 1rem;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background-color: rgb(41, 128, 185);
+        }
+
+        .btn-container {
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+
+        textarea {
+            min-height: 100px;
+            max-height: 300px;
+        }
+
+        @media (max-width: 426px) {
+            .Notice-container {
+                width: 90%;
+                padding: 15px;
+                margin-top: 1rem;
+            }
+
+            .Notice-register-h1 {
+                font-size: 1.4rem;
+                margin-bottom: 1.5rem;
+            }
+
+            .Notice-register-label {
+                font-size: 1rem;
+                margin: 0.5rem 0;
+            }
+
+            .Notice-register-text {
+                padding: 0.5rem;
+                font-size: 0.9rem;
+            }
+
+            .btn-primary {
+                font-size: 0.9rem;
+                padding: 8px 16px;
+                margin-top: 1rem;
+            }
+
+            .btn-container {
+                margin-top: 1rem;
+            }
+
+            textarea {
+                min-height: 80px;
+                max-height: 200px;
+            }
+        }
+    </style>
+</th:block>
+
+<th:block th:replace="~{/layout/basic :: setContent(~{this::content} )}">
+
+    <div layout:fragment="content">
+        <div class="container Notice-container">
+            <h1 class="Notice-register-h1">공지사항 작성</h1>
+
+            <form th:action="@{/notice/register}" th:method="post">
+                <div class="form-group">
+                    <label class="Notice-register-label">제목</label>
+                    <input type="text" class="form-control Notice-register-text" name="title" placeholder="제목을 입력해주세요.">
+                </div>
+                <div class="form-group">
+                    <label class="Notice-register-label">내용</label>
+                    <textarea class="form-control Notice-register-text textarea1" rows="5" name="content"
+                        placeholder="내용을 입력해주세요."></textarea>
+                </div>
+
+                <!--            Writer ----------  ----------------------------------------------------------------------->
+                <!--            <div class="form-group">-->
+                <!--                <label >Writer</label>-->
+                <!--                <input type="text" class="form-control" name="writer" placeholder="Enter Writer">-->
+                <!--            </div>-->
+
+                <div class="btn-container">
+                    <button type="submit" class="btn btn-primary">작성</button>
+                </div>
+            </form>
+        </div>
+        <script th:inline="javascript">
+            const DEFAULT_HEIGHT = 30;
+            const $textarea = document.querySelector('.textarea1');
+
+            $textarea.oninput = (event) => {
+                const $target = event.target;
+                $target.style.height = 0;
+                $target.style.height = DEFAULT_HEIGHT + $target.scrollHeight + 'px';
+            };
+        </script>
+    </div>
+</th:block>
+
+</html>

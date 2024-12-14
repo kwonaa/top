@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layouts/layout1}">
+
+<th:block layout:fragment="css">
+    <style>
+        .Qna-register-label {
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin: 1rem 0;
+            display: block;
+        }
+
+        .Qna-register-h1 {
+            margin-bottom: 2rem;
+            text-align: center;
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+
+        .Qna-register-text {
+            width: 100%;
+            padding: 0.6rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        .Qna-container {
+            width: 60%;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            margin: auto;
+            margin-top: 2rem;
+        }
+
+        .btn-primary {
+            background-color: rgb(52, 152, 219);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin-top: 1rem;
+            border-radius: 5px;
+            font-size: 1rem;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background-color: rgb(41, 128, 185);
+        }
+
+        textarea {
+            resize: none;
+            min-height: 100px;
+            max-height: 300px;
+        }
+
+        .btn-container {
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+
+        @media (max-width: 426px) {
+            .Qna-container {
+                width: 90%;
+                padding: 15px;
+                box-shadow: none;
+                border: 1px solid #ddd;
+            }
+
+            .Qna-register-h1 {
+                font-size: 1.4rem;
+                margin-bottom: 1.5rem;
+            }
+
+            .Qna-register-label {
+                font-size: 1rem;
+            }
+
+            .Qna-register-text {
+                font-size: 0.9rem;
+                padding: 0.5rem;
+            }
+
+            .btn-primary {
+                font-size: 0.9rem;
+                padding: 8px 15px;
+                width: 100%;
+                text-align: center;
+            }
+
+            textarea {
+                font-size: 0.9rem;
+                min-height: 80px;
+                max-height: 250px;
+            }
+        }
+    </style>
+</th:block>
+<!--<th:block th:replace="~{/layout/basic :: setContent(~{this::content} )}">-->
+
+<div layout:fragment="content">
+    <div class="container Qna-container">
+        <h1 class="Qna-register-h1">QnA 작성</h1>
+
+        <form th:action="@{/qna/register}" th:method="post">
+            <div class="form-group">
+                <label class="Qna-register-label">제목</label>
+                <input type="text" class="form-control Qna-register-text" name="title" placeholder="제목을 입력해주세요.">
+            </div>
+            <div class="form-group" style="margin-bottom: 3rem;">
+                <label class="Qna-register-label">내용</label>
+                <textarea id="textarea" class="form-control Qna-register-text" rows="5" name="content"
+                    placeholder="내용을 입력해주세요."></textarea>
+            </div>
+            <!--            Writer ----------  ----------------------------------------------------------------------->
+            <!--            <div class="form-group">-->
+            <!--                <label >Writer</label>-->
+            <!--                <input type="text" class="form-control" name="writer" placeholder="Enter Writer">-->
+            <!--            </div>-->
+
+            <div class="btn-container">
+                <button type="submit" class="btn btn-primary">작성</button>
+            </div>
+        </form>
+    </div>
+    <script th:inline="javascript">
+        const DEFAULT_HEIGHT = 30;
+        const $textarea = document.querySelector('#textarea');
+
+        $textarea.oninput = (event) => {
+            const $target = event.target;
+            $target.style.height = 0;
+            $target.style.height = DEFAULT_HEIGHT + $target.scrollHeight + 'px';
+        };
+    </script>
+</div>
+<!--</th:block>-->
+
+</html>

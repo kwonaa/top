@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{layouts/layout1}">
+
+<head>
+    <meta name="_csrf" th:content="${_csrf.token}" />
+    <meta name="_csrf_header" th:content="${_csrf.headerName}" />
+    <script th:src="@{/starrr.js}"></script>
+    <link th:href="@{/css/starrr.css}" rel="stylesheet">
+    <script src="https://cdn.iamport.kr/js/iamport.payment-1.1.8.js"></script> <!-- 아임포트 결제 -->
+    <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.2.0/css/font-awesome.min.css">
+</head>
+
+<!-- 사용자 스크립트 추가 -->
+<th:block layout:fragment="script">
+    <script th:inline="javascript">
+
+        document.addEventListener('DOMContentLoaded', function () {
+    function addCommas(num) {
+        return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+
+    // 모든 price 클래스의 요소를 대상으로 쉼표를 추가
+    document.querySelectorAll('.price').forEach(function (element) {
+        const rawPrice = element.getAttribute('data-raw-price');
+        if (rawPrice && !isNaN(rawPrice)) {
+            const formattedPrice = addCommas(parseInt(rawPrice, 10));
+            element.textContent = formattedPrice + '원';
+        } else {
+            console.warn('data-raw-price 속성이 없거나 값이 올바르지 않습니다:', element);
+        }
+    });
+});
+        $(document).ready(function () {
+                        // 스크롤 이동 함수
+            function goToScroll(targetId) {
+                $('html, body').animate({
+                    scrollTop: $("#" + targetId).offset().top
+                }, 400);
+            }
+
+            // 리뷰 버튼 클릭 이벤트
+            $("#reviewBtn").click(function () {
+                goToScroll('reviewSection'); // 리뷰 섹션으로 이동
+            });
+
+            // 상세보기 버튼 클릭 이벤트
+            $("#detailBtn").click(function () {
+                goToScroll('detailSection'); // 상세보기 섹션으로 이동
+            });
+
+            // 맨위로 버튼 클릭 이벤트
+            $("#topBtn").click(function () {
+                goToScroll('topSection'); // 상세보기 섹션으로 이동
+            });
+
+            calculateTotalPrice();
+
+            $("#count").change(function () {
+                calculateTotalPrice();
+            });
+
+            var grade = 0;
+            var no = [[${ item.no }]]; // 상품 번호
+            var id = /*[[${member != null ? member.id : 'null'}]]*/ null; // 로그인하지 않은 경우 null
+            var inputText = $('input[name="text"]'); // 리뷰 텍스트 입력 필드 정의
+
+            //starrr생성
+            $(".starrr").starrr({
+                rating: grade,
+                change: function (e, value) {
+                    if (value) {
+                        grade = value;
+                    }
+                }
+            });
+
+            var reviewModal = $(".reviewModal");
+
+            $(".addReviewBtn").click(function () {
+                // 1106 성아 수정
+                var hasOrdered = $(this).data("hasordered") === true || $(this).data("hasordered") === "true"; // 문자열을 Boolean으로 변환
+
+                console.log("hasOrdered 값:", hasOrdered); // 값 확인용 로그
+
+                // 주문 이력이 없는 경우 모달을 열지 않음
+                if (!hasOrdered) { // Boolean 값으로 평가
+                    alert("리뷰를 작성하려면 해당 상품을 구매하셔야 합니다.");
+                    return;
+                }
+
+                grade = 0;
+                inputText.val("");
+
+                //starrr초기화
+                var star = $(".starrr").clone();
+                $(".starrr").remove();
+                $("#divGrade").append(star);
+                $('.starrr').starrr({
+                    rating: grade,
+                    change: function (e, value) {
+                        if (value) {
+                            grade = value;
+                        }
+                    }
+                });
+                $(".removeBtn, .modifyBtn").hide();
+                $(".reviewSaveBtn").show();
+
+                reviewModal.modal('show');
+            });
+
+            $('.reviewSaveBtn').click(function () {
+                var data = { no: no, grade: grade, text: inputText.val(), id: id };
+
+                $.ajax({
+                    url: '/reviews/' + no,
+                    type: "POST",
+                    data: JSON.stringify(data),
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "text",
+                    beforeSend: function (xhr) {
+                        var token = $("meta[name='_csrf']").attr("content");
+                        var header = $("meta[name='_csrf_header']").attr("content");
+                        xhr.setRequestHeader(header, token);
+                    },
+                    success: function () {
+                        self.location.reload();
+                    }
+                });
+                reviewModal.modal('hide');
+            });
+
+            // 페이지가 열리면 바로 리뷰 데이터들을 가져와서 사용한다.
+            function getItemReviews() {
+                $.getJSON("/reviews/" + no + "/all", function (arr) {
+                    var str = "";
+
+                    $.each(arr, function (idx, review) {
+<!--                        str += '<div style="cursor:pointer" class="card-body" data-reviewnum=' + review.reviewnum + '>';-->
+                        // 1105 성아 수정 // data-id 속성 추가
+                        str += '<div style="cursor:pointer" class="card-body" data-reviewnum="' + review.reviewnum + '" data-id="' + review.id + '">';
+                        str += '<h5 class="card-title">' + review.text + ' <span class="reviewgrade" data-grade2=' + review.grade + '></span></h5>';
+                        str += '<h6 class="card-subtitle mb-2 text-muted">' + review.name + '</h6>';
+                        str += '<p class="card-text">' + new Date(review.regTime).toLocaleString() + '</p>';
+                        str += '</div>';
+                    });
+
+                    $(".reviewList").html(str);
+                    $(".reviewgrade").each(function () {
+                        $(this).starrr({ rating: $(this).data("grade2"), readOnly: true });
+                    });
+                });
+            }
+
+            getItemReviews();
+
+            var reviewnum;
+
+            // 1105 성아 수정
+            $(".reviewList").on("click", ".card-body", function () {
+                var targetReview = $(this); // 클릭한 리뷰
+                var reviewId = targetReview.data("id");
+
+<!--                // 주문 이력이 있는지 확인 (hasOrdered 값이 true일 때만 모달을 열 수 있음)-->
+<!--                var hasOrdered = targetReview.data("hasordered") === true || targetReview.data("hasordered") === "true"; // 문자열을 Boolean으로 변환-->
+<!--                console.log("hasOrdered 값:", hasOrdered); // 값 확인용 로그-->
+
+<!--                if (!hasOrdered) { // 주문 이력이 없으면 경고 메시지 표시-->
+<!--                    alert("리뷰를 작성하려면 해당 상품을 구매하셔야 합니다.");-->
+<!--                    return; // 리뷰 작성할 수 없도록 중지-->
+<!--                }-->
+
+                // 리뷰 작성자와 로그인한 유저가 같으면 모달 열기
+                if(id === reviewId) {
+                    $(".reviewSaveBtn").hide();
+                    $(".removeBtn, .modifyBtn").show();
+
+                    var targetReview = $(this);
+
+                    reviewnum = targetReview.data("reviewnum");
+                    inputText.val(targetReview.find('.card-title').text().trim());
+                    var grade2 = $(this).find(".reviewgrade").data("grade2");
+
+                    var star = $(".starrr").clone();
+                    $(".starrr").remove();
+                    $("#divGrade").append(star);
+
+                    $(".starrr").starrr({
+                        rating: grade2,
+                        change: function (e, value) {
+                            if (value) {
+                                grade = value;
+                            }
+                        }
+                    });
+
+                    $('.reviewModal').modal('show');
+                }  else {
+                    // memberId와 reviewId가 다를 경우 처리할 로직 (예: 경고 메시지 표시)
+                    alert("리뷰 작성자만 수정 및 삭제가 가능합니다.");
+                }
+            });
+
+            $(".modifyBtn").on("click", function () {
+                var data = { reviewnum: reviewnum, no: no, grade: grade, text: inputText.val(), id: id };
+
+                $.ajax({
+                    url: '/reviews/' + no + "/" + reviewnum,
+                    type: "PUT",
+                    data: JSON.stringify(data),
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "text",
+                    beforeSend: function (xhr) {
+                        var token = $("meta[name='_csrf']").attr("content");
+                        var header = $("meta[name='_csrf_header']").attr("content");
+                        xhr.setRequestHeader(header, token);
+                    },
+                    success: function () {
+                        self.location.reload();
+                    }
+                });
+                reviewModal.modal('hide');
+            });
+
+            $(".removeBtn").on("click", function () {
+                $.ajax({
+                    url: '/reviews/' + no + "/" + reviewnum,
+                    type: "DELETE",
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "text",
+                    beforeSend: function (xhr) {
+                        var token = $("meta[name='_csrf']").attr("content");
+                        var header = $("meta[name='_csrf_header']").attr("content");
+                        xhr.setRequestHeader(header, token);
+                    },
+                    success: function () {
+                        self.location.reload();
+                    }
+                });
+                reviewModal.modal('hide');
+            });
+
+            $('#closeModal1, #closeModal2').on('click', function() {
+                $('#myModal').modal('hide'); // 모달 강제 닫기
+            });
+        });
+
+
+
+        function calculateTotalPrice() {
+            var count = $("#count").val();
+            var price = $("#price").val();
+            var totalPrice = price * count;
+            $("#totalPrice").html(totalPrice + '원');
+        }
+
+        function order() {
+            var itemId = $("#itemId").val();
+            var count = $("#count").val();
+            var totalAmount = parseInt($("#totalPrice").text().replace('원', ''));
+            var itemNm = $("#itemNm").val();
+
+            $.ajax({
+                url: "/order",
+                type: "GET",
+                dataType: "json",
+                cache: false,
+                success: function (isLoggedIn) {
+                    if (isLoggedIn) {
+                        var IMP = window.IMP;
+                        IMP.init("imp12017008");
+
+                        IMP.request_pay({
+                            pg: "kakaopay",
+                            pay_method: "card",
+                            name: itemNm,
+                            amount: totalAmount,
+                        }, function (rsp) {
+                            if (rsp.success) {
+                                completeOrder(itemId, count);
+                            } else {
+                                alert(rsp.error_msg);
+                            }
+                        });
+                    } else {
+                        alert("로그인 후 이용해주세요.");
+                        location.href = '/members/login';
+                    }
+                },
+                error: function () {
+                    alert("로그인 후 이용해주세요.");
+                    location.href = '/members/login';
+                }
+            });
+        }
+
+        function completeOrder(itemId, count) {
+            var token = $("meta[name='_csrf']").attr("content");
+            var header = $("meta[name='_csrf_header']").attr("content");
+
+            $.ajax({
+                url: "/order",
+                type: "POST",
+                contentType: "application/json",
+                data: JSON.stringify({
+                    itemId: itemId,
+                    count: count,
+                }),
+                beforeSend: function (xhr) {
+                    xhr.setRequestHeader(header, token);
+                },
+                dataType: "json",
+                success: function () {
+                    alert("주문이 완료 되었습니다.");
+                    location.href = '/orders';
+                },
+                error: function () {
+                    alert("주문 처리 중 오류가 발생했습니다.");
+                }
+            });
+        }
+
+        function addCart() {
+            var token = $("meta[name='_csrf']").attr("content");
+            var header = $("meta[name='_csrf_header']").attr("content");
+
+            var url = "/cart";
+            var paramData = {
+                itemId: $("#itemId").val(),
+                count: $("#count").val()
+            };
+
+            var param = JSON.stringify(paramData);
+
+            $.ajax({
+                url: url,
+                type: "POST",
+                contentType: "application/json",
+                data: param,
+                beforeSend: function (xhr) {
+                    xhr.setRequestHeader(header, token);
+                },
+                dataType: "json",
+                success: function () {
+                    alert("상품을 장바구니에 담았습니다.");
+                    location.href = '/cart';
+                },
+                error: function (jqXHR) {
+                    if (jqXHR.status == '200') {
+                        alert("로그인 후 이용해주세요");
+                        location.href = '/members/login';
+                    } else {
+                        alert(jqXHR.responseText);
+                    }
+                }
+            });
+        }
+
+        <!--      08Nov            의빈추가-->
+        function addWishlist() {
+            var token = $("meta[name='_csrf']").attr("content");
+            var header = $("meta[name='_csrf_header']").attr("content");
+
+            var url = "/wishlist";  // 위시리스트 추가 요청 URL
+            var paramData = {
+                itemId: $("#itemId").val(),  // 상품 ID
+                itemNm: $("#itemNm").val()   // 상품명
+            };
+
+            var param = JSON.stringify(paramData);  // 요청 데이터는 반드시 JSON 형식이어야 합니다.
+
+            // AJAX 요청
+            $.ajax({
+                url: url,
+                type: "POST",
+                contentType: "application/json",  // 서버에 JSON 형식으로 전송
+                data: param,  // 데이터는 JSON 형식으로 보냄
+                beforeSend: function (xhr) {
+                    xhr.setRequestHeader(header, token);  // CSRF 토큰 설정
+                },
+                dataType: "json",  // 응답 데이터 타입을 JSON으로 설정
+                success: function (response) {
+                    alert("찜하기가 완료되었습니다!");  // 찜하기 성공 메시지
+                    location.href = '/wishlist';
+                },
+                error: function (jqXHR) {
+                    if (jqXHR.status == 409) {  // 이미 찜한 경우
+                        alert("이미 찜한 상품입니다.");
+                    } else if (jqXHR.status == 200) {
+                        alert("로그인 후 찜하실 수 있습니다.");
+                        location.href = '/members/login';  // 로그인 페이지로 리다이렉트
+                    } else {
+                        alert("찜하기 처리 중 오류가 발생했습니다.");
+                    }
+                }
+            });
+        }
+
+    </script>
+</th:block>
+
+<!-- 사용자 CSS 추가 -->
+<th:block layout:fragment="css">
+    <style>
+        .mgb-15 {
+            margin-bottom: 15px;
+        }
+
+        .mgt-30 {
+            margin-top: 30px;
+        }
+
+        .mgt-50 {
+            margin-top: 50px;
+        }
+
+        .repImgDiv {
+            margin-right: 15px;
+            width: 65%;
+            text-align: center;
+        }
+
+        .repImg {
+            width: 100%;
+            height: 400px;
+        }
+
+        .wd50 {
+            width: 35%;
+        }
+
+        .starrr {
+            color: #EBE700;
+        }
+
+        .reviewtable {
+            margin-bottom: 20rem;
+        }
+
+        .mgb-15 {
+            margin-bottom: 15px;
+        }
+
+        .mgt-30 {
+            margin-top: 30px;
+        }
+
+        .mgt-50 {
+            margin-top: 50px;
+        }
+
+        .repImgDiv {
+            margin-right: 15px;
+            height: auto;
+            width: 65%;
+        }
+
+        .repImg {
+            width: 100%;
+            height: 400px;
+        }
+
+        .wd50 {
+            height: auto;
+            width: 35%;
+        }
+
+        .d-flex {
+            padding: 2%;
+        }
+
+        .repImgDiv {
+            text-align: center;
+        }
+
+        .rounded {
+            object-fit: contain;
+        }
+
+        .repImgDiv .rounded {
+            margin: auto;
+            width: 50%;
+            transition: transform 0.3s ease;
+        }
+
+        .repImgDiv:hover .rounded {
+            transform: scale(1.5);
+        }
+
+        #paynav {
+            text-align: right;
+            position: fixed;
+            height: auto;
+            bottom: 0px;
+            border-top: solid 3px rgb(0, 47, 255);
+            background-color: rgb(255, 255, 255);
+            padding: 1rem;
+            box-shadow: 0px 0px 10px 5px rgba(212, 212, 212, 0.716);
+        }
+
+        .reviewtable {
+            margin-bottom: 20rem;
+        }
+
+        #closeModal2 {
+            position: absolute;
+            right: 1rem;
+            border-radius: 30%;
+            border: solid 0.5px rgb(199, 199, 199);
+            background: none;
+        }
+
+        .addReviewBtn {
+            float: right;
+            background-color: rgb(144, 201, 255);
+            color: rgb(41, 41, 41);
+            font-weight: bold;
+        }
+
+        .reviewList {
+            border-top: solid 0.1px rgb(209, 209, 209);
+            margin-top: 0.5rem;
+        }
+
+        .reviewList .card-body {
+            border-bottom: solid 0.1px rgb(209, 209, 209);
+            padding-bottom: 1rem;
+            padding-top: 1rem;
+        }
+
+        #avgStarRating {
+            display: flex; /* 별 아이콘을 가로로 배치 */
+            width : 25px;
+        }
+
+        #avgStarRating .fa-star {
+            display: inline-block; /* 별 아이콘이 가로로 나열되도록 설정 */
+            font-size: 24px; /* 아이콘 크기 조절 */
+            color: #ddd; /* 기본 별 색상 */
+        }
+
+        #avgStarRating .fa-star.checked {
+            color: #EBE700; /* 채워진 별 색상 */
+        }
+
+        .itemManu{
+            z-index:1;
+            position: fixed;
+            bottom:20rem;
+            right:10rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap:1rem;
+        }
+        .itemManu>*{
+            margin-bottom:1rem;
+            border-bottom:solid 0.1px gray;
+        }
+        .itemManu>#topBtn{
+            border:none;
+        }
+        @media (max-width: 426px) {
+            
+            .d-flex.container {
+                flex-direction: column;
+                padding: 1rem;
+            }
+
+            .repImgDiv {
+                width: 100%;
+                margin-bottom: 1rem;
+            }
+
+            .rounded{
+                width: 100%;
+            }
+
+            .repImg {
+                height: auto;
+                max-height: 250px;
+            }
+
+            .wd50 {
+                width: 100%;
+            }
+
+            .input-group.w-50 {
+                width: 100%;
+            }
+
+            #avgStarRating{
+                margin-left: 2rem;
+            }
+
+            #avgStarRating .fa-star {
+                font-size: 16px;
+            }
+
+            #paynav {
+                position: fixed;
+                bottom: 0;
+                width: 100%;
+                height: auto;
+                padding: 1rem;
+                box-shadow: 0px -2px 5px rgba(0, 0, 0, 0.1);
+            }
+
+            .paybt {
+                width: 100%;
+                /* 버튼 폭 전체로 */
+                margin-bottom: 0.5rem;
+            }
+
+            .itemManu {
+                bottom: 10rem;
+                /* 버튼 메뉴 위치 조정 */
+                right: 1rem;
+            }
+
+            .itemManu>* {
+                font-size: 14px;
+                /* 버튼 크기 축소 */
+            }
+
+            .jumbotron.container {
+                padding: 1rem;
+            }
+
+            .reviewtable {
+                padding: 1rem;
+            }
+
+            .reviewModal .modal-dialog {
+                margin: 1rem;
+            }
+
+            .reviewModal .modal-body {
+                font-size: 14px;
+                /* 모달 내부 폰트 크기 조정 */
+            }
+
+            .reviewList .card-body {
+                font-size: 14px;
+                /* 리뷰 리스트 폰트 크기 조정 */
+            }
+
+            .container-fluid h4,
+            .container-fluid h2 {
+                font-size: 16px;
+            }
+
+            #totalPrice {
+                font-size: 18px;
+                /* 결제 금액 크기 */
+            }
+
+            .addReviewBtn {
+                width: 100%;
+                /* 리뷰 작성 버튼 전체 폭 */
+                margin-top: 1rem;
+            }
+
+            /* 별점 평균 영역 */
+            #avgStarRating {
+                justify-content: center;
+            }
+        }
+    </style>
+</th:block>
+
+<div layout:fragment="content">
+
+    <input type="hidden" id="itemId" th:value="${item.no}">
+    <input type="hidden" id="itemNm" th:value="${item.itemNm}">
+    <div class="itemManu">
+        <button id="topBtn" class="btn">▲</button>
+        <button id="detailBtn" class="btn">상세보기</button>
+        <button id="reviewBtn" class="btn">리뷰</button>
+    </div>
+    <div class="d-flex container">
+        <div class="repImgDiv">
+            <img th:src="${item.itemImgDtoList[0].imgUrl}" class="rounded repImg" th:alt="${item.itemNm}">
+        </div>
+        <div class="wd50">
+            <div class="container-fluid" style="display:flex;">
+                <span th:if="${item.itemSellStatus == T(com.top.constant.ItemSellStatus).SELL}"
+                    class="badge badge-primary mgb-15" style="background-color: red; width: 4rem;">판매중</span>
+                <span th:if="${item.itemSellStatus == T(com.top.constant.ItemSellStatus).SOLD_OUT}"
+                    class="badge btn-danger mgb-15" style="background-color: red; width: 4rem;">품절</span>
+
+                <!-- 1106 성아 추가 -->
+                <div id="avgStarRating">
+                    <span class="fa fa-star" th:classappend="${item.avg >= 1 ? 'checked' : ''}"></span>
+                    <span class="fa fa-star" th:classappend="${item.avg >= 2 ? 'checked' : ''}"></span>
+                    <span class="fa fa-star" th:classappend="${item.avg >= 3 ? 'checked' : ''}"></span>
+                    <span class="fa fa-star" th:classappend="${item.avg >= 4 ? 'checked' : ''}"></span>
+                    <span class="fa fa-star" th:classappend="${item.avg >= 5 ? 'checked' : ''}"></span>
+                </div>
+                <div style="margin-left:6rem;" type="button" th:text="${item.avg} + ' / 5.0' + ' (' + ${item.reviewCnt} + ')'"> <!-- 1108 성아 수정 -->
+                    <span class="badge badge-light" th:text="${item.avg}">0</span>
+                </div>
+            </div>
+            <div class="h4" th:text="${item.itemNm}"></div>
+            <hr class="my-4">
+
+            <div class="text-right">
+                <div class="h4 text-danger text-left">
+                    <input type="hidden" th:value="${item.price}" id="price" name="price">
+                    <span class="price" th:data-raw-price="${item.price}"></span>
+                </div>
+                <div class="input-group w-50">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text">수량</span>
+                    </div>
+                    <input type="number" name="count" id="count" class="form-control" value="1" min="1">
+                </div>
+            </div>
+            <hr class="my-4">
+            <div class="text-right mgt-50">
+                <h5>결제 금액</h5>
+                <h3 name="totalPrice" id="totalPrice" class="font-weight-bold text-danger">
+                    <span class="price" data-raw-price="${item.price}"></span>
+                </h3>
+            </div>
+            <div  class="text-left">
+                <button type="button" class="btn-buy paybt" onclick="addWishlist()">찜하기</button>
+                <button type="button" class="btn-buy paybt" th:if="${item.itemSellStatus == T(com.top.constant.ItemSellStatus).SELL}" onclick="addCart()">장바구니 담기</button>
+                <!-- 1106 성아 주석 처리 -->
+<!--                <button type="button" class="btn-buy paybt" onclick="order()">주문하기</button>-->
+            </div>
+        </div>
+    </div>
+
+    <div class="jumbotron jumbotron-fluid container mgt-30">
+        <div class="container">
+            <h4 class="display-5" id="detailSection">상품 상세 설명</h4>
+            <hr class="my-4">
+            <p class="lead" th:text="${item.itemDetail}"></p>
+        </div>
+    </div>
+
+    <!-- 1108 성아 수정 -->
+    <div th:each="itemImg, iterStat : ${item.itemImgDtoList}" class="text-center">
+        <img th:if="${not #strings.isEmpty(itemImg.imgUrl) and iterStat.index > 0}"
+             th:src="${itemImg.imgUrl}" class="rounded mgb-15" width="800">
+    </div>
+
+    <div class="container reviewtable" id="reviewSection">
+        <button type="button" class="btn" th:text="'리뷰수 ' + ${item.reviewCnt}">
+            <span class="badge badge-light" th:text="${item.reviewCnt}">0</span>
+        </button>
+        <button type="button" class="btn" th:text="'별점 평균 ' + ${item.avg} + ' / 5.0'"> <!-- 1106 성아 수정 -->
+            <span class="badge badge-light" th:text="${item.avg}">0</span>
+        </button>
+
+        <!-- 1106 성아 수정 -->
+        <button type="button" class="btn addReviewBtn" th:if="${member != null}" th:data-hasOrdered="${hasOrdered ? 'true' : 'false'}">리뷰 작성</button>
+
+        <div class="list-group reviewList"></div>
+    </div>
+
+    <div class="reviewModal modal" id="myModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">상품 리뷰</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close" id="closeModal2">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group reviewbody">
+                        <input type="hidden" class="form-control" name="id"
+                            th:value="${member != null ? member.id : ''}">
+                        <label>이름</label>
+                        <input type="text" class="form-control" name="name"
+                            th:value="${member != null ? member.name : '비회원'}" readonly>
+                    </div>
+                    <div class="form-group reviewbody" id="divGrade">
+                        <label>별점 <span class="grade"></span></label>
+                        <div class='starrr'></div>
+                    </div>
+                    <div class="form-group reviewbody">
+                        <label>내용</label>
+                        <input type="text" class="form-control" name="text" placeholder="내용을 입력하세요.">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal" id="closeModal1">닫기</button>
+                    <button type="button" class="btn btn-primary reviewSaveBtn">저장</button>
+                    <button type="button" class="btn btn-primary modifyBtn">수정</button>
+                    <button type="button" class="btn btn-danger removeBtn">삭제</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="paynav" class="container-fluid" style="width: 100%;">
+        <div class="container">
+            <div class="surv row">
+                <div class="col-sm-8" style="text-align: left;">
+                    <h2 style="font-weight: bold;" th:text="${item.itemNm}"></h2>
+                    <h2>
+                        <span class="price" th:data-raw-price="${item.price}"></span>
+                    </h2>
+                </div>
+                <div class="col-sm-4">
+                    <!-- 1106 성아 주석 처리 -->
+<!--                    <button type="button" class="btn-buy paybt" onclick="order()">결제하기</button>-->
+                    <button type="button" class="btn-buy paybt" onclick="addWishlist()">찜하기</button>
+                    <button type="button" class="btn-buy paybt" th:if="${item.itemSellStatus == T(com.top.constant.ItemSellStatus).SELL}" onclick="addCart()">장바구니 담기</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</html>
